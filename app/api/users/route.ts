@@ -3,6 +3,9 @@ import { getUser, isPrivileged } from "@/utils/authentication";
 import bcrypt from "bcryptjs";
 import { NextRequest, NextResponse } from "next/server";
 
+
+//GET USERS------------------------------------------------------------------
+
 export async function GET(request : NextRequest){
 
     const havePrivilege = await isPrivileged(request, "users:read")
@@ -40,6 +43,10 @@ export async function GET(request : NextRequest){
         }
     )
 }
+
+
+
+//CREATE NEW USER------------------------------------------------------------------
 
 export async function POST(request : NextRequest){
 
@@ -132,6 +139,10 @@ export async function POST(request : NextRequest){
     )
 
 }
+
+
+
+//UPDATE USER------------------------------------------------------------------
 
 export async function PUT(request : NextRequest){
 

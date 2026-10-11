@@ -10,7 +10,7 @@ export async function getUser(request : NextRequest) : Promise<RequestUserType |
 
     const loginToken = request.cookies.get("login-token")?.value
     
-    const secretText = process.env.JOSE_SECRET || "TemporySecret8929%"
+    const secretText = process.env.JOSE_SECRET
 
     const secret = new TextEncoder().encode(secretText)
 

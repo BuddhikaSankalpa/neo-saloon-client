@@ -81,7 +81,7 @@ export async function POST(request : NextRequest){
             }
         )
 
-        const secretText = process.env.JOSE_SECRET || "TemporySecret8929%"
+        const secretText = process.env.JOSE_SECRET 
 
         const secret = new TextEncoder().encode(secretText)
 
@@ -105,9 +105,9 @@ export async function POST(request : NextRequest){
             {
                 name : "login-token",
                 value : token,
-                httpOnly : true,
-                secure : false,
-                sameSite : "lax",
+                httpOnly : true, // This cookie is only accessible by the server
+                secure : false, // This cookie is only sent over HTTPS
+                sameSite : "lax", // This cookie is only sent to the same site
                 maxAge : 60 * 60 * 24 * 7, // 7 days
             }
         )
