@@ -3,6 +3,9 @@ import { compare } from "bcryptjs";
 import { NextRequest, NextResponse } from "next/server";
 import * as jose from "jose";
 
+
+//LOGIN USERS ----------------------------------------------------------------------
+
 export async function POST(request : NextRequest){
 
     const body = await request.json();

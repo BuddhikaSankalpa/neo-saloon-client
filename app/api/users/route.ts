@@ -9,7 +9,8 @@ import { NextRequest, NextResponse } from "next/server";
 import z from "zod";
 
 
-//REGISTER USERS ----------------------------------------------------------------------
+
+//RETREAVE USERS ----------------------------------------------------------------------
 export async function GET(request : NextRequest){
 
     const havePrivilege = await isPrivileged(request, "users:read")

@@ -8,7 +8,7 @@ import { ProductStatus } from "@/app/generated/prisma/enums";
 import ProductUpdateRequestSchema from "@/types/dto/ProductUpdateRequest";
 
 
-//GET PRODUCTS ----------------------------------------------------------------------
+//RETREAVE PRODUCTS ----------------------------------------------------------------------
 export async function GET(request : NextRequest){
 
     const params = getPaginationInfo(request)
@@ -98,7 +98,7 @@ export async function GET(request : NextRequest){
 
 export async function POST(request : NextRequest){
 
-    const hasPrivilege = await isPrivileged(request , "products:add")
+    const hasPrivilege = await isPrivileged(request , "products:add") 
 
     if(hasPrivilege){
 
@@ -172,7 +172,8 @@ export async function POST(request : NextRequest){
 
 
 
-//UPDATE PRODUCT ----------------------------------------------------------------------
+
+//DELETE PRODUCT ----------------------------------------------------------------------
 
 export async function DELETE(request : NextRequest){
 
@@ -348,8 +349,6 @@ export async function PUT(request : NextRequest){
     }
 
 }
-
-
 
 
 
