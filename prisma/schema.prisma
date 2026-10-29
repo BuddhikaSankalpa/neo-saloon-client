@@ -28,6 +28,14 @@ model User {
   lastLogin      DateTime?
   privileges      String[] @default([]) // ["users:add", "users:edit", "users:read"]
   profileImage String @default("/images/default-profile.png")
+  customerAppointments Appointment[] @relation("AppointmentCustomer")
+  assignedAppointments Appointment[] @relation("AppointmentStaff")
+  staffServices StaffService[]
+  schedule Schedule?
+  timeOff StaffTimeOff[]
+  consultations ConsultationRecord[] @relation("ConsultationCustomer")
+  recordedConsultations ConsultationRecord[] @relation("ConsultationRecorder")
+  appointmentHistory AppointmentHistory[]
 } //gender, emailVerified, phoneVerified
 
 
@@ -67,4 +75,161 @@ model Media{
   type MediaType
   productId String
   product Product @relation(fields : [productId], references: [id])
+}
+
+enum ServiceStatus {
+  ACTIVE
+  INACTIVE
+  ARCHIVED
+}
+
+enum AppointmentStatus {
+  BOOKED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+model Service {
+  id String @id @default(uuid())
+  name String
+  description String @default("")
+  durationMinutes Int
+  feeMinor Int
+  currency String @default("LKR")
+  status ServiceStatus @default(ACTIVE)
+  listed Boolean @default(true)
+  requiresConsultation Boolean @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  variants ServiceVariant[]
+  staff StaffService[]
+  appointmentServices AppointmentService[]
+  consultationClearances ConsultationClearance[]
+}
+
+model ServiceVariant {
+  id String @id @default(uuid())
+  serviceId String
+  service Service @relation(fields: [serviceId], references: [id], onDelete: Restrict)
+  name String
+  description String @default("")
+  active Boolean @default(true)
+  appointmentServices AppointmentService[]
+  @@unique([serviceId, name])
+}
+
+model StaffService {
+  staffId String
+  serviceId String
+  staff User @relation(fields: [staffId], references: [id], onDelete: Restrict)
+  service Service @relation(fields: [serviceId], references: [id], onDelete: Restrict)
+  @@id([staffId, serviceId])
+}
+
+// key is "business" or the staff user ID. Missing schedules are closed.
+model Schedule {
+  key String @id
+  staffId String? @unique
+  staff User? @relation(fields: [staffId], references: [id], onDelete: Restrict)
+  weekly Json
+  exceptions Json
+  updatedAt DateTime @updatedAt
+}
+
+model StaffTimeOff {
+  id String @id @default(uuid())
+  staffId String
+  staff User @relation(fields: [staffId], references: [id], onDelete: Restrict)
+  startsAt DateTime @db.Timestamptz(3)
+  endsAt DateTime @db.Timestamptz(3)
+  reason String
+  @@index([staffId, startsAt, endsAt])
+}
+
+model ConsultationRecord {
+  id String @id @default(uuid())
+  customerId String
+  customer User @relation("ConsultationCustomer", fields: [customerId], references: [id], onDelete: Restrict)
+  recordedById String
+  recordedBy User @relation("ConsultationRecorder", fields: [recordedById], references: [id], onDelete: Restrict)
+  completedAt DateTime @db.Timestamptz(3)
+  validUntil DateTime @db.Timestamptz(3)
+  approved Boolean
+  notes String @default("")
+  createdAt DateTime @default(now())
+  clearances ConsultationClearance[]
+  appointmentServices AppointmentService[]
+  @@index([customerId, completedAt])
+}
+
+model ConsultationClearance {
+  consultationId String
+  serviceId String
+  consultation ConsultationRecord @relation(fields: [consultationId], references: [id], onDelete: Restrict)
+  service Service @relation(fields: [serviceId], references: [id], onDelete: Restrict)
+  @@id([consultationId, serviceId])
+}
+
+model Appointment {
+  id String @id @default(uuid())
+  customerId String
+  customer User @relation("AppointmentCustomer", fields: [customerId], references: [id], onDelete: Restrict)
+  staffId String
+  staff User @relation("AppointmentStaff", fields: [staffId], references: [id], onDelete: Restrict)
+  preferredStaffId String?
+  startsAt DateTime @db.Timestamptz(3)
+  endsAt DateTime @db.Timestamptz(3)
+  reservedUntil DateTime @db.Timestamptz(3)
+  bufferMinutes Int @default(0)
+  status AppointmentStatus @default(BOOKED)
+  actualStartedAt DateTime? @db.Timestamptz(3)
+  actualEndedAt DateTime? @db.Timestamptz(3)
+  cancellationReason String?
+  customerNotes String @default("")
+  version Int @default(1)
+  idempotencyKey String
+  requestHash String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  services AppointmentService[]
+  history AppointmentHistory[]
+  @@unique([customerId, idempotencyKey])
+  @@index([staffId, startsAt, reservedUntil])
+  @@index([customerId, startsAt, reservedUntil])
+  @@index([createdAt, id])
+}
+
+model AppointmentService {
+  id String @id @default(uuid())
+  appointmentId String
+  appointment Appointment @relation(fields: [appointmentId], references: [id], onDelete: Restrict)
+  serviceId String
+  service Service @relation(fields: [serviceId], references: [id], onDelete: Restrict)
+  variantId String?
+  variant ServiceVariant? @relation(fields: [variantId], references: [id], onDelete: Restrict)
+  consultationId String?
+  consultation ConsultationRecord? @relation(fields: [consultationId], references: [id], onDelete: Restrict)
+  position Int
+  name String
+  variantName String?
+  durationMinutes Int
+  feeMinor Int
+  currency String
+  @@unique([appointmentId, position])
+  @@index([serviceId, appointmentId])
+}
+
+model AppointmentHistory {
+  id String @id @default(uuid())
+  appointmentId String
+  appointment Appointment @relation(fields: [appointmentId], references: [id], onDelete: Restrict)
+  actorId String
+  actor User @relation(fields: [actorId], references: [id], onDelete: Restrict)
+  action String
+  reason String?
+  before Json?
+  after Json
+  createdAt DateTime @default(now())
+  @@index([appointmentId, createdAt])
 }

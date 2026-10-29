@@ -7,6 +7,7 @@ import getPaginationInfo from "@/utils/pageInfoRetrieval";
 import bcrypt from "bcryptjs";
 import { NextRequest, NextResponse } from "next/server";
 import z from "zod";
+import { registrationPrivileges } from "@/lib/appointments/policy";
 
 
 
@@ -122,6 +123,7 @@ export async function POST(request : NextRequest){
                 lastName : body.lastName,
                 password : passwordHash,
                 phone : body.phone,
+                privileges: [...registrationPrivileges],
             }
         })
 
@@ -260,7 +262,10 @@ export async function PUT(request : NextRequest){
                 )
             }
 
-            UserUpdateByAdminRequestSchema.parse(body)
+            const parsedUpdate = UserUpdateByAdminRequestSchema.parse(body)
+            if (parsedUpdate.privileges !== undefined && !requestedUser.privileges.includes("users:privileges:edit")) {
+                return NextResponse.json({ message: "Missing privilege: users:privileges:edit" }, { status: 403 });
+            }
 
             const user = await prisma.user.findUnique({
                 where : {
@@ -293,7 +298,7 @@ export async function PUT(request : NextRequest){
                     profileImage : body.profileImage || user.profileImage,
                     role : body.role || user.role,
                     status : body.status || user.status,
-                    privileges : body.privileges || user.privileges
+                    privileges : parsedUpdate.privileges ?? user.privileges
                 }
             })
 

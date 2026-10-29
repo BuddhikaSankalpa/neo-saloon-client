@@ -85,6 +85,7 @@ export async function POST(request : NextRequest){
         )
 
         const secretText = process.env.JOSE_SECRET 
+        if (!secretText) return NextResponse.json({ message: "Authentication is not configured" }, { status: 500 });
 
         const secret = new TextEncoder().encode(secretText)
 
@@ -95,7 +96,7 @@ export async function POST(request : NextRequest){
             lastName : user.lastName,
             role : user.role,
             privileges : user.privileges
-        }).setProtectedHeader({ alg : "HS256" }).sign(secret)
+        }).setProtectedHeader({ alg : "HS256" }).setIssuedAt().setExpirationTime("7d").sign(secret)
 
         const response = NextResponse.json(
             {
@@ -109,7 +110,7 @@ export async function POST(request : NextRequest){
                 name : "login-token",
                 value : token,
                 httpOnly : true, // This cookie is only accessible by the server
-                secure : false, // This cookie is only sent over HTTPS
+                secure : process.env.NODE_ENV === "production", // HTTPS in production
                 sameSite : "lax", // This cookie is only sent to the same site
                 maxAge : 60 * 60 * 24 * 7, // 7 days
             }
